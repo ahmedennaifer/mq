@@ -35,7 +35,7 @@ func parseIntoCommand(buff []byte) (*Command, error) {
 
 	case "topic": // 5 bytes
 		if len(res) < 2 {
-			fmt.Printf("error: arguments must be exactly 2. got: %v", len(res))
+			fmt.Printf("error: arguments must be exactly 2. got: %v\n", len(res))
 			return &Command{}, errors.New("must provide topic name")
 		}
 		return &Command{

@@ -64,12 +64,19 @@ func (s *Server) handleConnection(conn net.Conn) {
 		cmd, err := parseIntoCommand(buf[:n])
 		if err != nil {
 			fmt.Printf("Couldnt parse response: %v\n", err)
+			if _, err := conn.Write([]byte("\033[31m" + err.Error() + "\033[0m\n")); err != nil {
+				fmt.Println("cannot write to client", err)
+			}
 		}
 		if cmd.Action == "" {
 			fmt.Printf("%v: %v\n", conn.RemoteAddr(), string(buf[:n]))
 		} else {
-			if err := s.handleCommand(conn, *cmd); err != nil {
-				fmt.Println("error:", err)
+			if handleErr := s.handleCommand(conn, *cmd); err != nil {
+				fmt.Println("error:", handleErr)
+				if _, err := conn.Write([]byte(handleErr.Error())); err != nil {
+					fmt.Println("cannot write to client", err)
+				}
+
 			}
 
 			fmt.Printf("cmd: %v %v %v\n", cmd.Action, cmd.Target, cmd.Payload)
