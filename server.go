@@ -9,12 +9,12 @@ import (
 )
 
 type Server struct {
-	Type         string
-	Addr         string
-	Port         string
-	Ln           net.Listener
-	Topics       []Topic
-	WaitingPeers []Peer
+	Type   string
+	Addr   string
+	Port   string
+	Ln     net.Listener
+	Topics []Topic
+	Peers  map[net.Conn]*Peer
 }
 
 type ServerConfig struct{ addr, port string }
@@ -34,6 +34,8 @@ func (s *Server) Start() error {
 		return err
 	}
 	s.Ln = ln
+	s.Peers = make(map[net.Conn]*Peer)
+
 	for {
 		// accept loop
 		conn, err := s.Ln.Accept()
@@ -42,7 +44,7 @@ func (s *Server) Start() error {
 			return err
 		}
 		peer := NewPeer(conn)
-		s.WaitingPeers = append(s.WaitingPeers, *peer)
+		s.Peers[conn] = peer
 
 		go s.handleConnection(conn)
 
@@ -78,6 +80,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 					fmt.Println("cannot write to client", err)
 				}
 			}
+			fmt.Printf("cmd: %v %v %v\n", cmd.Action, cmd.Target, cmd.Payload)
 		}
 
 	}
@@ -124,58 +127,35 @@ func (s *Server) handleCommand(conn net.Conn, cmd Command) error {
 		}
 
 	case "subscribe":
-		match, err := s.GetTopic(cmd.Payload)
+		topic, err := s.GetTopic(cmd.Payload)
 		if err != nil {
-			fmt.Printf("error retrieving topic: %v\n", err)
-			if _, err := conn.Write([]byte("error: topic does not exist\n")); err != nil {
-				fmt.Printf("Error sending error to client %v", err)
-			}
+			conn.Write([]byte("error: topic not found"))
 			return err
 		}
 
-		waitingPeer, err := s.GetWaitingPeer(cmd.Target)
-		if err != nil {
-			fmt.Printf("couldn't find waiting peer\n")
-			if _, err := conn.Write([]byte("error: peer not found\n")); err != nil {
-				fmt.Printf("Error sending error to client %v", err)
-			}
-			return err
+		peer, exists := s.Peers[conn]
+		if !exists {
+			conn.Write([]byte("error: peer not registered"))
+			return errors.New("peer not found")
 		}
 
-		// Check if already subscribed
-		if slices.Contains(waitingPeer.Topics, cmd.Payload) {
-			if _, err := conn.Write([]byte("error: already subscribed\n")); err != nil {
-				fmt.Printf("Error sending error to client %v", err)
-			}
+		if slices.Contains(peer.Topics, cmd.Payload) {
+			conn.Write([]byte("error: already subscribed"))
 			return errors.New("already subscribed")
 		}
 
-		// Add topic to peer and peer to topic
-		waitingPeer.Topics = append(waitingPeer.Topics, cmd.Payload)
-		match.Peers = append(match.Peers, *waitingPeer)
-		fmt.Printf("added peer to topic\n")
+		peer.Topics = append(peer.Topics, cmd.Payload)
+		topic.Peers = append(topic.Peers, *peer)
 
-		// Send success response
-		if _, err := conn.Write([]byte("success\n")); err != nil {
-			fmt.Printf("Error sending response to client %v", err)
-		}
-
-		// Remove peer from waiting list
-		for i, peer := range s.WaitingPeers {
-			if peer.Name == waitingPeer.Name {
-				s.WaitingPeers = append(s.WaitingPeers[:i], s.WaitingPeers[i+1:]...)
-				fmt.Print("removed from waiting\n")
-				break
-			}
-		}
-
+		conn.Write([]byte("success"))
+		fmt.Printf("Peer %s joined topic %s\n", peer.Name, cmd.Payload)
 		return nil
 
-	case "waiting":
+	case "peers":
 		peerMap := make(map[string]int)
 		var peers []string
 
-		for _, peer := range s.WaitingPeers {
+		for _, peer := range s.Peers {
 			topicCount := len(peer.Topics)
 			peerMap[peer.Name] = topicCount
 			peerInfo := fmt.Sprintf("%s (%d topics)", peer.Name, topicCount)
@@ -188,15 +168,6 @@ func (s *Server) handleCommand(conn net.Conn, cmd Command) error {
 		}
 	}
 	return nil
-}
-
-func (s *Server) GetWaitingPeer(name string) (*Peer, error) {
-	for _, peer := range s.WaitingPeers {
-		if peer.Name == name {
-			return &peer, nil
-		}
-	}
-	return &Peer{}, errors.New("peer is not in waiting list")
 }
 
 func (s *Server) AddTopic(name string) error {
@@ -212,6 +183,7 @@ func (s *Server) AddTopic(name string) error {
 }
 
 func (s *Server) GetTopic(name string) (*Topic, error) {
+	fmt.Printf("%v\n", name)
 	for _, topic := range s.Topics {
 		if topic.Name == name {
 			return &topic, nil

@@ -73,9 +73,9 @@ func parseIntoCommand(buff []byte) (*Command, error) {
 			Payload: res[2],
 		}, nil
 
-	case "waiting":
+	case "peers":
 		return &Command{
-			Action:  "waiting",
+			Action:  "peers",
 			Target:  "",
 			Payload: "",
 		}, nil

@@ -25,39 +25,28 @@ func NewPeer(conn net.Conn) *Peer {
 
 func (p *Peer) Subscribe(topic string) error {
 	if slices.Contains(p.Topics, topic) {
-		fmt.Println("Already subbed to topic", topic)
-		return errors.New("error: already subscribed to topic")
+		return errors.New("already subscribed to topic")
 	}
 
-	sconn, err := net.Dial("tcp", ":8080")
+	// Send join command on existing connection
+	cmd := fmt.Sprintf("join %s", topic)
+	_, err := p.Conn.Write([]byte(cmd))
 	if err != nil {
-		fmt.Println("error connecting", err)
-		return err
+		return fmt.Errorf("failed to send join command: %v", err)
 	}
-	defer sconn.Close()
 
-	subCmdStr := fmt.Sprintf("subscribe %v %v", p.Name, topic)
-	_, err = sconn.Write([]byte(subCmdStr))
+	// Read response
+	buf := make([]byte, 1024)
+	n, err := p.Conn.Read(buf)
 	if err != nil {
-		fmt.Println("error sending subcmdstr to server", err)
-		return err
+		return fmt.Errorf("failed to read response: %v", err)
 	}
 
-	readBuff := make([]byte, 1024)
-	n, err := sconn.Read(readBuff)
-	if err != nil {
-		fmt.Println("error reading response for str cmd parsing", err)
-		return err
-	}
-
-	response := strings.TrimSpace(string(readBuff[:n]))
+	response := strings.TrimSpace(string(buf[:n]))
 	if response != "success" {
-		fmt.Printf("failed to subscribe, got: %v\n", response)
-		return errors.New("failed to subscribe")
+		return fmt.Errorf("subscription failed: %s", response)
 	}
 
 	p.Topics = append(p.Topics, topic)
-	fmt.Print("subbed with success\n")
-	fmt.Printf("peer topics: %v\n", p.Topics)
 	return nil
 }
