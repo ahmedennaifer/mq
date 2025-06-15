@@ -183,11 +183,10 @@ func (s *Server) AddTopic(name string) error {
 }
 
 func (s *Server) GetTopic(name string) (*Topic, error) {
-	fmt.Printf("%v\n", name)
-	for _, topic := range s.Topics {
+	for i, topic := range s.Topics {
 		if topic.Name == name {
-			return &topic, nil
+			return &s.Topics[i], nil
 		}
 	}
-	return &Topic{}, errors.New("topic does not exist\n")
+	return &Topic{}, errors.New("topic does not exist")
 }

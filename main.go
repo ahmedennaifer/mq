@@ -27,8 +27,7 @@ func startServer() {
 		port: "8080",
 	}
 	server := NewServer(conf)
-	topic := NewTopic("test-topic")
-	err := server.AddTopic(topic.Name)
+	err := server.AddTopic("test-topic")
 	if err != nil {
 		fmt.Printf("error creating topic: %v", err)
 	}
@@ -43,6 +42,13 @@ func startServer() {
 
 	time.Sleep(time.Second * 20)
 	fmt.Print("sleeping for 20 sec...\n")
+
+	topic, err := server.GetTopic("test-topic")
+	if err != nil {
+		fmt.Printf("error getting topic: %v\n", err)
+		return
+	}
+
 	for i := range 100 {
 		fmt.Print("broadcasting...\n")
 		msg := fmt.Sprintf("broadcasting test: %v", i+1)
