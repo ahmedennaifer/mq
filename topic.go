@@ -8,7 +8,7 @@ import (
 type Topic struct {
 	Name     string
 	Peers    []Peer
-	Messages []string
+	Messages []Message
 }
 
 func NewTopic(name string) *Topic {

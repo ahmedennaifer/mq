@@ -80,6 +80,19 @@ func parseIntoCommand(buff []byte) (*Command, error) {
 			Payload: "",
 		}, nil
 
+	case "publish":
+		// split on | for publish: "publish <json>|<topic>"
+		parts := strings.SplitN(stripped[8:], "|", 2)
+		if len(parts) != 2 {
+			return &Command{}, errors.New("publish format: publish <json>|<topic>")
+		}
+
+		return &Command{
+			Action:  "publish",
+			Target:  parts[1], // topic
+			Payload: parts[0], // json
+		}, nil
+
 	default:
 		return &Command{}, nil
 	}

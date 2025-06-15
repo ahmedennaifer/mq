@@ -166,6 +166,20 @@ func (s *Server) handleCommand(conn net.Conn, cmd Command) error {
 		if _, err := conn.Write([]byte(str)); err != nil {
 			fmt.Println(err)
 		}
+	case "publish":
+		topicName := cmd.Target
+		err, msg := Deserialize(cmd.Payload)
+		if err != nil {
+			fmt.Printf("error deserializing payload %v", err)
+			return err
+		}
+		topic, err := s.GetTopic(topicName)
+		if err != nil {
+			fmt.Printf("topic %v not found", topicName)
+			return err
+		}
+		topic.Messages = append(topic.Messages, *msg)
+		fmt.Printf("topic messages: %v\n", topic.Messages)
 	}
 	return nil
 }

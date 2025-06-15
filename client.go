@@ -23,7 +23,10 @@ func startClient() {
 		Topics:   make([]string, 0),
 	}
 
-	err = peer.Subscribe("test-topic")
+	// err = peer.Subscribe("test-topic")
+
+	msg := NewMessage("pub msg 1")
+	err = peer.Publish("test-topic", msg)
 	if err != nil {
 		fmt.Printf("Subscribe error: %v\n", err)
 	} else {
