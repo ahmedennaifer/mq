@@ -28,14 +28,12 @@ func (p *Peer) Subscribe(topic string) error {
 		return errors.New("already subscribed to topic")
 	}
 
-	// Send join command on existing connection
 	cmd := fmt.Sprintf("subscribe %v %v", p.Name, topic)
 	_, err := p.Conn.Write([]byte(cmd))
 	if err != nil {
 		return fmt.Errorf("failed to send join command: %v", err)
 	}
 
-	// Read response
 	buf := make([]byte, 1024)
 	n, err := p.Conn.Read(buf)
 	if err != nil {

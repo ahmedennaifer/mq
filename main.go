@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 )
 
 func main() {
@@ -33,7 +34,18 @@ func startServer() {
 	}
 
 	fmt.Println("Starting server on localhost:8080...")
-	if err := server.Start(); err != nil {
-		log.Fatal(err)
+	go func() {
+		err = server.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	time.Sleep(time.Second * 20)
+	fmt.Print("sleeping for 20 sec...\n")
+	for i := range 100 {
+		fmt.Print("broadcasting...\n")
+		msg := fmt.Sprintf("broadcasting test: %v", i+1)
+		topic.Broadcast(msg)
 	}
 }
