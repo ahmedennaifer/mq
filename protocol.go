@@ -50,6 +50,36 @@ func parseIntoCommand(buff []byte) (*Command, error) {
 			Target:  "topic",
 			Payload: "",
 		}, nil
+
+	case "broadcast":
+		if len(res) < 3 {
+			fmt.Printf("error: arguments must be exactly 3. got: %v\n", len(res))
+			return &Command{}, errors.New("must provide topic name and message")
+		}
+		return &Command{
+			Action:  "broadcast",
+			Target:  res[1],
+			Payload: res[2],
+		}, nil
+
+	case "subscribe":
+		if len(res) < 3 {
+			fmt.Printf("error: arguments must be exactly 3. got: %v\n", len(res))
+			return &Command{}, errors.New("must provide topic name and message")
+		}
+		return &Command{
+			Action:  "subscribe",
+			Target:  res[1],
+			Payload: res[2],
+		}, nil
+
+	case "waiting":
+		return &Command{
+			Action:  "waiting",
+			Target:  "",
+			Payload: "",
+		}, nil
+
 	default:
 		return &Command{}, nil
 	}
