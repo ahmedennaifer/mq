@@ -26,13 +26,15 @@ func NewPeer(conn net.Conn) *Peer {
 func (p *Peer) Publish(topic string, msg *Message) error { // TODO: message struct {
 	// p.Publish(topic, message)
 	// write message to topic messages
+
+	msg.From = p.Name
+	msg.Topic = topic
+
 	err, serialize := Serialize(*msg)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
-	msg.From = p.Name
-	msg.Topic = topic
 
 	// | for avoiding splitting on json parts. ie: user:< >name,< >timestamp: and so on.
 	cmd := fmt.Sprintf("publish %s|%s", serialize, msg.Topic)
