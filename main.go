@@ -15,8 +15,6 @@ func main() {
 		startServer()
 	case "client":
 		startClient()
-	default:
-		fmt.Println("Usage: go run . -mode=server or go run . -mode=client")
 	}
 }
 
@@ -36,20 +34,4 @@ func startServer() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// time.Sleep(time.Second * 20)
-	// fmt.Print("sleeping for 20 sec...\n")
-	//
-	// // Get the topic from the server, not the local variable
-	// topic, err := server.GetTopic("test-topic")
-	// if err != nil {
-	// 	fmt.Printf("error getting topic: %v\n", err)
-	// 	return
-	// }
-	//
-	// for i := range 100 {
-	// 	fmt.Print("broadcasting...\n")
-	// 	msg := fmt.Sprintf("broadcasting test: %v", i+1)
-	// 	topic.Broadcast(msg)
-	// }
 }

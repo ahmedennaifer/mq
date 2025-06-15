@@ -1,0 +1,5 @@
+- add persistence
+- healthcheck
+- listen to topic
+- list messages
+- ...
